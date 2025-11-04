@@ -1,0 +1,6 @@
+{
+  "name": "hebo",
+  "version": "1.0.0",
+  "scripts": {},
+  "dependencies": {}
+}

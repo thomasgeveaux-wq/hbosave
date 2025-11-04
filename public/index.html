@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>HEBO — Hybrid Fit/Notion</title>
+  <meta name="theme-color" content="#0d0d0e" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <span class="title">HEBO</span>
+      <span class="badge">v6.1 “VENÈRE ++”</span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Navigation">
+      <button class="tab active" data-tab="planning" role="tab" aria-selected="true">Planning</button>
+      <button class="tab" data-tab="profils" role="tab" aria-selected="false">Profils</button>
+      <button class="tab" data-tab="materiel" role="tab" aria-selected="false">Matériel</button>
+      <button class="tab" data-tab="params" role="tab" aria-selected="false">Paramètres</button>
+      <button class="tab" data-tab="history" role="tab" aria-selected="false">Historique</button>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <!-- TAB: PLANNING -->
+    <section class="tabpanel active" id="tab-planning" role="tabpanel" aria-labelledby="Planning">
+      <div class="panel">
+        <h2>🗓️ Planning hebdo</h2>
+        <div class="card">
+          <div class="card-body">
+            <div class="hint">Coche qui mange <b>Midi</b>/<b>Dîner</b> pour chaque jour. Une colonne par profil.</div>
+            <div class="planning-wrap">
+              <table id="planningTable" class="planning"></table>
+            </div>
+          </div>
+        </div>
+
+        <details open class="card">
+          <summary class="card-title">🚀 Génération</summary>
+          <div class="card-body">
+            <button id="generateBtn" class="btn primary">Générer mes recettes</button>
+            <button id="exportBtn" class="btn ghost">Exporter JSON</button>
+            <button id="exportPdfBtn" class="btn ghost">Exporter PDF</button>
+            <span id="status" class="status"></span>
+          </div>
+        </details>
+
+        <div id="results" class="results"></div>
+      </div>
+    </section>
+
+    <!-- TAB: PROFILS -->
+    <section class="tabpanel" id="tab-profils" role="tabpanel" aria-labelledby="Profils" hidden>
+      <div class="panel">
+        <h2>👤 Profils & portions</h2>
+        <div class="card">
+          <div class="card-body">
+            <form id="profileForm" class="row">
+              <div class="field"><label>Nom</label><input id="pName" type="text" placeholder="Thomas" /></div>
+              <div class="field"><label>G / portion (g)</label><input id="pG" type="number" value="100" /></div>
+              <div class="field"><label>P / portion (g)</label><input id="pP" type="number" value="200" /></div>
+              <div class="field"><label>Lég / portion (g)</label><input id="pV" type="number" value="150" /></div>
+              <button class="btn" id="addProfileBtn">Ajouter / Mettre à jour</button>
+            </form>
+            <div id="profilesList" class="profiles"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: MATERIEL -->
+    <section class="tabpanel" id="tab-materiel" role="tabpanel" aria-labelledby="Matériel" hidden>
+      <div class="panel">
+        <h2>🧰 Matériel, envies & placard</h2>
+        <div class="card">
+          <div class="card-body">
+            <div class="field">
+              <label>Matériel autorisé</label>
+              <input id="matos" type="text" placeholder="poêle, casserole, four, blender, wok" />
+            </div>
+            <div class="field">
+              <label>Envies</label>
+              <input id="envies" type="text" placeholder="ex: plus de tex-mex, rapide, peu de vaisselle..." />
+            </div>
+            <div class="field">
+              <label>Autre (interdits; allergies; éviter; cuisines)</label>
+              <textarea id="autres" rows="3" placeholder="interdits: ...; allergies: ...; éviter: ...; cuisines: ..."></textarea>
+            </div>
+            <div class="field">
+              <label>Placard (prioritaire)</label>
+              <textarea id="placard" rows="3" placeholder="liste libre"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: PARAMS -->
+    <section class="tabpanel" id="tab-params" role="tabpanel" aria-labelledby="Paramètres" hidden>
+      <div class="panel">
+        <h2>⚙️ Paramètres</h2>
+        <div class="card">
+          <div class="card-body">
+            <div class="field">
+              <label>Clé API OpenAI <small>(stockée localement)</small></label>
+              <input id="apiKey" type="password" placeholder="sk-..." />
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>Modèle</label>
+                <select id="model">
+                  <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+                  <option value="gpt-4o-mini">gpt-4o-mini</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Tokens max</label>
+                <input id="maxTokens" type="number" min="1000" max="32000" step="500" value="12000" />
+              </div>
+            </div>
+            <div class="hint">💡 Option plus clean: route API Vercel pour cacher la clé (variables d’environnement).</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body row">
+            <button id="installBtn" class="btn ghost">Ajouter à l'écran d'accueil</button>
+          </div>
+        </div>
+      </div>
+    </section>
+<section class="tabpanel" id="tab-history" role="tabpanel" aria-labelledby="Historique" hidden>
+  <div class="panel">
+    <h2>🕘 Historique des générations</h2>
+    <div class="card">
+      <div class="card-body">
+        <div id="historyList" class="history-list"></div>
+        <div class="row" style="margin-top:8px;">
+          <button id="clearHistoryBtn" class="btn danger">Vider l'historique</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  </main>
+
+  <template id="recipeTpl">
+    <article class="recipe card">
+      <div class="card-title recipe-head">
+        <div class="recipe-title"></div>
+        <div class="pill"></div>
+      </div>
+      <div class="card-body">
+        <div class="meta grid-2">
+          <div><b>Cuisine</b>: <span class="r-cuisine"></span></div>
+          <div><b>Durée</b>: <span class="r-duree"></span> min</div>
+          <div><b>Matériel</b>: <span class="r-matos"></span></div>
+          <div><b>Portions</b>: <span class="r-portions"></span></div>
+          <div><b>Cibles (g cru)</b>: <span class="r-cibles"></span></div>
+          <div><b>kcal/personne</b>: <span class="r-kcal"></span></div>
+        </div>
+        <div class="grid-2">
+          <div>
+            <h4>🧂 Ingrédients</h4>
+            <table class="ing"><thead><tr><th>Ingrédient</th><th>Qté</th><th>Unité</th></tr></thead><tbody class="r-ing"></tbody></table>
+          </div>
+          <div>
+            <h4>👨‍🍳 Étapes — plat</h4>
+            <ol class="r-steps"></ol>
+            <h4>🥣 Étapes — sauce</h4>
+            <ol class="r-sauce"></ol>
+          </div>
+        </div>
+        <div class="benefit"><b>Bénéfices (sport)</b> : <span class="r-benef"></span></div>
+      </div>
+    </article>
+  </template>
+
+  <script src="./app.js"></script>
+</body>
+</html>
