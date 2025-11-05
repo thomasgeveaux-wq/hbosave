@@ -21,7 +21,9 @@ const defaultState = {
   autres: "interdits: ; allergies: ; éviter: ; cuisines: ",
   placard: "",
   planning: {}, // key = `${day}|${meal}|${profileId}` => true/false
-  history: []   // [{id, ts, title, recipes:[{title,sig}], plan}]
+  history: [],// [{id, ts, title, recipes:[{title,sig}], plan}]
+  historyRecipes: []
+
 
 };
 
@@ -75,6 +77,17 @@ function addHistoryEntry(plan){
   if(state.history.length>50) state.history = state.history.slice(-50);
   saveState();
   renderHistory();
+
+   (plan.recipes || []).forEach(r => {
+  state.historyRecipes.push({
+    id: cryptoRandom(),
+    ts,
+    title: r.title || "(sans titre)",
+    sig: recipeSignature(r),
+    recipe: structuredClone(r)
+  });
+});
+
 }
 function deleteHistoryEntry(id){
   state.history = (state.history||[]).filter(h=>h.id!==id);
