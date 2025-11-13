@@ -119,3 +119,29 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:v
     font-size: 0.8rem;
   }
 }
+
+.saved-recipe {
+  border-radius: 8px;
+  border: 1px solid #eee;
+  padding: 4px 8px;
+  margin-bottom: 6px;
+  background: #fafafa;
+}
+
+.saved-recipe > summary {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  list-style: none;
+}
+
+.saved-recipe > summary::-webkit-details-marker {
+  display: none;
+}
+
+.saved-recipe-body {
+  margin-top: 6px;
+}
+
