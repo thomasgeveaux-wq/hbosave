@@ -113,16 +113,19 @@ function renderSavedRecipes(){
     return;
   }
 
- wrap.innerHTML = hist.map(r=>`
-    <div class="history-item">
-      <div><b>${r.title || "(sans titre)"}</b> <span class="muted">${r.recipe?.cuisine_family ? "("+r.recipe.cuisine_family+")" : ""}</span></div>
-      <div class="row" style="gap:6px;margin-top:6px;">
+  wrap.innerHTML = hist.map(r=>`
+    <details class="saved-recipe">
+      <summary>
+        <span>${r.title || "(sans titre)"}</span>
+        ${r.recipe?.cuisine_family ? `<span class="muted">(${r.recipe.cuisine_family})</span>` : ""}
+      </summary>
+      <div class="saved-recipe-body">
         <button class="btn" data-loadrecipe="${r.id}">Ouvrir</button>
       </div>
-    </div>
-    <hr/>
+    </details>
   `).join("");
 }
+
 
 qs("#savedRecipes")?.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-loadrecipe]");
@@ -720,7 +723,10 @@ function aggregateShoppingList(plan){
 function renderShoppingList(plan){
   const rows = aggregateShoppingList(plan);
   const wrap = document.createElement("section");
-  wrap.className = "card";
+  // AVANT: wrap.className = "card";
+  wrap.className = "card shopping-card";
+  wrap.id = "shoppingCard";
+
   wrap.innerHTML = `
     <div class="card-title">🛒 Liste de courses (agrégée)</div>
     <div class="card-body">
@@ -1116,28 +1122,46 @@ exportPdfBtn.addEventListener("click", async () => {
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF("p", "mm", "a4");
 
-  const recipeCards = document.querySelectorAll(".recipe");
+  const pageWidth  = pdf.internal.pageSize.getWidth()  - 20; // marges
+  const pageHeight = pdf.internal.pageSize.getHeight() - 20;
   let y = 10;
 
-  for (let card of recipeCards) {
-    const canvas = await html2canvas(card, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
-    const imgProps = pdf.getImageProperties(imgData);
-    
-    const pdfWidth = 190;
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+  const addElemToPdf = async (elem) => {
+    const canvas = await html2canvas(elem, {
+      scale: 1,               // scale 1 => beaucoup plus léger
+      useCORS: true,
+      backgroundColor: "#ffffff",
+    });
 
-    if (y + pdfHeight > 280) {
+    // JPEG 0.75 => gros gain de poids
+    const imgData  = canvas.toDataURL("image/jpeg", 0.75);
+    const imgProps = pdf.getImageProperties(imgData);
+    const imgHeight = (imgProps.height * pageWidth) / imgProps.width;
+
+    if (y + imgHeight > pageHeight) {
       pdf.addPage();
       y = 10;
     }
 
-    pdf.addImage(imgData, "PNG", 10, y, pdfWidth, pdfHeight);
-    y += pdfHeight + 5;
+    pdf.addImage(imgData, "JPEG", 10, y, pageWidth, imgHeight);
+    y += imgHeight + 5;
+  };
+
+  // 1) Toutes les recettes
+  const recipeCards = document.querySelectorAll(".recipe");
+  for (const card of recipeCards) {
+    await addElemToPdf(card);
+  }
+
+  // 2) Puis la liste de courses
+  const shoppingCard = document.querySelector(".shopping-card");
+  if (shoppingCard) {
+    await addElemToPdf(shoppingCard);
   }
 
   pdf.save("HEBO_recettes.pdf");
 });
+
 
 /* ---------- Boot ---------- */
 renderProfiles();
