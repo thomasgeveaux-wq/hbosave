@@ -114,6 +114,16 @@ function renderSavedRecipes(){
   }
 
   wrap.innerHTML = hist.map(r=>`
+    <details class="saved-recipe" data-id="${r.id}">
+      <summary>
+        <span>${r.title || "(sans titre)"}</span>
+        ${r.recipe?.cuisine_family ? `<span class="muted">(${r.recipe.cuisine_family})</span>` : ""}
+      </summary>
+      <div class="saved-recipe-body"></div>
+    </details>
+  `).join("");
+}
+  wrap.innerHTML = hist.map(r=>`
     <details class="saved-recipe">
       <summary>
         <span>${r.title || "(sans titre)"}</span>
@@ -127,14 +137,29 @@ function renderSavedRecipes(){
 }
 
 
-qs("#savedRecipes")?.addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-loadrecipe]");
-  if (!btn) return;
-  const id = btn.getAttribute("data-loadrecipe");
-  const item = (state.historyRecipes||[]).find(x => x.id === id);
+const savedWrap = qs("#savedRecipes");
+
+savedWrap?.addEventListener("toggle", (e) => {
+  const details = e.target;
+  if (!(details instanceof HTMLDetailsElement)) return;
+  if (!details.open) return; // on ne rend que quand ça s'ouvre
+
+  const id = details.dataset.id;
+  if (!id) return;
+
+  const item = (state.historyRecipes || []).find(x => x.id === id);
   if (!item) return;
-  openRecipeFromSaved(item);
+
+  const body = details.querySelector(".saved-recipe-body");
+  if (!body) return;
+
+  // Pour éviter de re-générer 50 fois si on ouvre/ferme
+  if (body.dataset.rendered === "1") return;
+
+  renderSavedRecipeInline(item, body);
+  body.dataset.rendered = "1";
 });
+
 
 /* ---------- DOM refs ---------- */
 const planningTable = qs("#planningTable");
@@ -844,7 +869,105 @@ function renderSingleRecipe(r, mountEl){
   mountEl.innerHTML = "";
   mountEl.appendChild(node);
 }
+function renderSavedRecipeInline(item, mount){
+  // copie runtime de la recette
+  const r = (typeof structuredClone==="function")
+    ? structuredClone(item.recipe)
+    : JSON.parse(JSON.stringify(item.recipe));
 
+  r.portions = r.portions || {};
+
+  // UI portions + host recette
+  mount.innerHTML = `
+    <div class="card">
+      <div class="card-body">
+        <div class="row" style="gap:8px;margin-bottom:12px;">
+          ${state.profiles.filter(p=>p.active).map(p=>{
+            const val = Number(r.portions?.[p.name]||0);
+            return `
+              <label class="field" style="min-width:160px;">
+                <span>${p.name} — portions (repas)</span>
+                <input type="number" class="portion-input" data-name="${p.name}" value="${val}" min="0" step="1" />
+              </label>
+            `;
+          }).join("")}
+          <button class="btn primary saved-recalc-btn">Recalculer</button>
+        </div>
+        <div class="saved-recipe-host"></div>
+      </div>
+    </div>
+  `;
+
+  const host = mount.querySelector(".saved-recipe-host");
+  renderSingleRecipe(r, host);
+
+  const recalcBtn = mount.querySelector(".saved-recalc-btn");
+
+  recalcBtn?.addEventListener("click", () => {
+    const inputs = mount.querySelectorAll(".portion-input");
+    const activeProfiles = state.profiles.filter(p => p.active);
+
+    // 1) anciennes portions
+    const oldPortions = { ...r.portions };
+
+    // 2) nouvelles portions
+    inputs.forEach(inp => {
+      const n = inp.getAttribute("data-name");
+      const v = Number(inp.value || 0);
+      r.portions[n] = v;
+    });
+
+    // 3) anciens besoins G/P/V
+    let G_old = 0, P_old = 0, V_old = 0;
+    activeProfiles.forEach(p => {
+      const nbOld = Number(oldPortions[p.name] || 0);
+      G_old += (p.needs.G || 0) * nbOld;
+      P_old += (p.needs.P || 0) * nbOld;
+      V_old += (p.needs.V || 0) * nbOld;
+    });
+
+    // 4) nouveaux besoins G/P/V
+    let G_new = 0, P_new = 0, V_new = 0;
+    activeProfiles.forEach(p => {
+      const nbNew = Number(r.portions[p.name] || 0);
+      G_new += (p.needs.G || 0) * nbNew;
+      P_new += (p.needs.P || 0) * nbNew;
+      V_new += (p.needs.V || 0) * nbNew;
+    });
+
+    // 5) ratios
+    const ratioG = (G_old > 0 && G_new > 0) ? (G_new / G_old) : 1;
+    const ratioP = (P_old > 0 && P_new > 0) ? (P_new / P_old) : 1;
+    const ratioV = (V_old > 0 && V_new > 0) ? (V_new / V_old) : 1;
+    const fatRatio = (ratioG + ratioP + ratioV) / 3;
+
+    // 6) scale des ingrédients
+    if (Array.isArray(r.ingredients)) {
+      r.ingredients.forEach(it => {
+        if (typeof it.qty !== "number" || isNaN(it.qty)) return;
+        const entry = findNutriEntry(it.name || "");
+        if (!entry) return;
+
+        let mult = 1;
+        if (entry.type === "carb")      mult = ratioG;
+        else if (entry.type === "prot") mult = ratioP;
+        else if (entry.type === "veg")  mult = ratioV;
+        else if (entry.type === "fat" || entry.type === "sauce") mult = fatRatio;
+
+        it.qty = Math.round(it.qty * mult * 10) / 10;
+      });
+    }
+
+    // 7) update macros_targets
+    r.macros_targets = r.macros_targets || {};
+    r.macros_targets.glucides_g_cru         = Math.round(G_new);
+    r.macros_targets.viandes_poissons_g_cru = Math.round(P_new);
+    r.macros_targets.legumes_g_cru          = Math.round(V_new);
+
+    // 8) re-render
+    renderSingleRecipe(r, host);
+  });
+}
 function openRecipeFromSaved(item){
   // 1) runtime
   const r = (typeof structuredClone==="function") ? structuredClone(item.recipe) : JSON.parse(JSON.stringify(item.recipe));
