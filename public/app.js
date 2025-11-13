@@ -871,15 +871,72 @@ function openRecipeFromSaved(item){
   renderSingleRecipe(r, host);
 
   // 4) recalc portions → recalc kcal/macros affichées
-  wrap.querySelector("#recalcBtn")?.addEventListener("click", ()=>{
+  wrap.querySelector("#recalcBtn")?.addEventListener("click", () => {
     const inputs = wrap.querySelectorAll(".portion-input");
-    inputs.forEach(inp=>{
+
+    const activeProfiles = state.profiles.filter(p => p.active);
+
+    // 1) Sauvegarder les anciennes portions
+    const oldPortions = { ...r.portions };
+
+    // 2) Lire les nouvelles portions depuis les inputs
+    inputs.forEach(inp => {
       const n = inp.getAttribute("data-name");
-      const v = Number(inp.value||0);
+      const v = Number(inp.value || 0);
       r.portions[n] = v;
     });
+
+    // 3) Calculer anciens besoins G/P/V (en fonction des anciennes portions)
+    let G_old = 0, P_old = 0, V_old = 0;
+    activeProfiles.forEach(p => {
+      const nbOld = Number(oldPortions[p.name] || 0);
+      G_old += (p.needs.G || 0) * nbOld;
+      P_old += (p.needs.P || 0) * nbOld;
+      V_old += (p.needs.V || 0) * nbOld;
+    });
+
+    // 4) Calculer nouveaux besoins G/P/V (avec les nouvelles portions)
+    let G_new = 0, P_new = 0, V_new = 0;
+    activeProfiles.forEach(p => {
+      const nbNew = Number(r.portions[p.name] || 0);
+      G_new += (p.needs.G || 0) * nbNew;
+      P_new += (p.needs.P || 0) * nbNew;
+      V_new += (p.needs.V || 0) * nbNew;
+    });
+
+    // 5) Ratios par macro (si l'ancien est 0 -> on ne scale pas)
+    const ratioG = (G_old > 0 && G_new > 0) ? (G_new / G_old) : 1;
+    const ratioP = (P_old > 0 && P_new > 0) ? (P_new / P_old) : 1;
+    const ratioV = (V_old > 0 && V_new > 0) ? (V_new / V_old) : 1;
+    const fatRatio = (ratioG + ratioP + ratioV) / 3;
+
+    // 6) Adapter les quantités d'ingrédients par type (carb/prot/veg/fat/sauce)
+    if (Array.isArray(r.ingredients)) {
+      r.ingredients.forEach(it => {
+        if (typeof it.qty !== "number" || isNaN(it.qty)) return;
+        const entry = findNutriEntry(it.name || "");
+        if (!entry) return;
+
+        let mult = 1;
+        if (entry.type === "carb")      mult = ratioG;
+        else if (entry.type === "prot") mult = ratioP;
+        else if (entry.type === "veg")  mult = ratioV;
+        else if (entry.type === "fat" || entry.type === "sauce") mult = fatRatio;
+
+        it.qty = Math.round(it.qty * mult * 10) / 10; // arrondi 0.1
+      });
+    }
+
+    // 7) Mettre à jour macros_targets de la recette pour coller aux nouveaux besoins
+    r.macros_targets = r.macros_targets || {};
+    r.macros_targets.glucides_g_cru        = Math.round(G_new);
+    r.macros_targets.viandes_poissons_g_cru= Math.round(P_new);
+    r.macros_targets.legumes_g_cru         = Math.round(V_new);
+
+    // 8) Re-render complet de la recette (ingrédients + kcal + cibles)
     renderSingleRecipe(r, host);
   });
+
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
