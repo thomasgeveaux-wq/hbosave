@@ -1,0 +1,650 @@
+/* =============== RESET / GLOBAL =============== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #050509;
+  --bg-elevated: #101018;
+  --bg-elevated-soft: #151525;
+  --border-subtle: #2b2b3b;
+  --accent: #fbbf24;
+  --accent-soft: rgba(251, 191, 36, 0.16);
+  --accent-strong: #facc15;
+  --text: #f9fafb;
+  --text-muted: #9ca3af;
+  --danger: #f97373;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.6);
+  --shadow-subtle: 0 10px 25px rgba(0, 0, 0, 0.4);
+  --nav-height: 64px;
+  --transition-fast: 0.15s ease-out;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top, #1f2937 0, #020617 42%, #000 80%);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =============== APP SHELL =============== */
+
+.app-shell {
+  min-height: 100vh;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 16px calc(var(--nav-height) + 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Header “app” */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(15,23,42,0.94), rgba(30,64,175,0.92));
+  box-shadow: var(--shadow-soft);
+  position: sticky;
+  top: 8px;
+  z-index: 30;
+}
+
+.app-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 0, #facc15, #f97316);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 18px;
+  color: #111827;
+}
+
+.app-header-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.app-subtitle {
+  font-size: 11px;
+  color: var(--accent-soft);
+}
+
+/* zone pour un bouton install / export dans le header si existant */
+.app-header-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* =============== TABS “APP BAR” =============== */
+
+/* conteneur des .tab (tu dois déjà l’avoir autour des boutons) */
+.tabs {
+  display: flex;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: var(--shadow-subtle);
+  backdrop-filter: blur(14px);
+}
+
+/* style des boutons .tab existants */
+.tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+    transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.tab svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tab.active {
+  background: radial-gradient(circle at top, #facc15, #f97316);
+  color: #111827;
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(248, 250, 252, 0.22);
+  transform: translateY(-1px);
+}
+
+/* barre de tabs collée en bas en mobile */
+.tabs-wrapper {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 10px env(safe-area-inset-bottom);
+  background: linear-gradient(180deg, rgba(15,23,42,0), rgba(15,23,42,0.98));
+  display: flex;
+  justify-content: center;
+  z-index: 40;
+}
+
+/* =============== PANELS =============== */
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tabpanel {
+  border-radius: var(--radius-xl);
+  background: radial-gradient(circle at top left, rgba(148,163,184,0.12), transparent 60%),
+    radial-gradient(circle at bottom right, rgba(251,191,36,0.10), transparent 55%),
+    var(--bg-elevated);
+  border: 1px solid rgba(55, 65, 81, 0.8);
+  box-shadow: var(--shadow-soft);
+  padding: 14px;
+}
+
+/* t’as déjà hidden / active via JS, je ne touche pas */
+
+/* =============== GENERIC UI =============== */
+
+.card {
+  background: var(--bg-elevated-soft);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-subtle);
+  padding: 12px 14px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title .muted {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.card-body {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* grille générique */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* champs */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.field > span {
+  font-weight: 500;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="password"],
+textarea,
+select {
+  background: rgba(15,23,42,0.9);
+  border-radius: 10px;
+  border: 1px solid rgba(75,85,99,0.8);
+  padding: 7px 9px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
+    background var(--transition-fast);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(148,163,184,0.7);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 1px rgba(250,204,21,0.4);
+}
+
+/* boutons */
+.btn {
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.5);
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(15,23,42,0.9);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background var(--transition-fast), transform var(--transition-fast),
+    box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.5);
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, #facc15, #f97316);
+  border-color: transparent;
+  color: #111827;
+}
+
+.btn.ghost {
+  background: rgba(15,23,42,0.8);
+}
+
+.btn.danger {
+  background: rgba(220,38,38,0.18);
+  border-color: rgba(239,68,68,0.7);
+  color: #fecaca;
+}
+
+/* switches profils */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.switch input[type="checkbox"] {
+  appearance: none;
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.6);
+  position: relative;
+  background: rgba(15,23,42,0.9);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.switch input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.switch input[type="checkbox"]:checked {
+  background: linear-gradient(135deg, #22c55e, #4ade80);
+  border-color: transparent;
+}
+
+.switch input[type="checkbox"]:checked::after {
+  transform: translateX(10px);
+  background: #022c22;
+}
+
+/* =============== PROFILS =============== */
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(15,23,42,0.9);
+  border: 1px solid rgba(55,65,81,0.9);
+  margin-bottom: 6px;
+}
+
+.profile-main {
+  flex: 1;
+}
+
+.profile-main .name {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.profile-main .needs {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.profile-row .actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* =============== PLANNING =============== */
+
+.planning-wrapper {
+  overflow-x: auto;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(15,23,42,0.9);
+  border: 1px solid rgba(55,65,81,0.9);
+}
+
+/* tableau orange */
+#planningTable {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 620px;
+  font-size: 11px;
+  text-align: center;
+}
+
+#planningTable th,
+#planningTable td {
+  border: 1px solid rgba(55,65,81,0.9);
+  padding: 6px 4px;
+  background: rgba(15,23,42,0.9);
+}
+
+#planningTable thead th {
+  background: linear-gradient(135deg, #f97316, #f59e0b);
+  color: #111827;
+  font-weight: 700;
+}
+
+#planningTable thead .subt {
+  background: #111827;
+  color: var(--text-muted);
+}
+
+.sticky-left {
+  position: sticky;
+  left: 0;
+  background: #020617 !important;
+  z-index: 2;
+}
+
+.cell-center {
+  text-align: center;
+}
+
+/* =============== RECETTES =============== */
+
+.recipe {
+  margin-bottom: 10px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background: radial-gradient(circle at top left, rgba(248,250,252,0.04), transparent 55%),
+    var(--bg-elevated-soft);
+  box-shadow: var(--shadow-subtle);
+  padding: 10px 12px;
+}
+
+.recipe-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.recipe-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pill {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.recipe-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.recipe-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.r-portions {
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.r-cibles,
+.r-kcal {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.r-kcal {
+  margin-top: 5px;
+}
+
+/* table ingrédients */
+table.ing,
+.r-ing {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+table.ing th,
+table.ing td,
+.r-ing th,
+.r-ing td {
+  border: 1px solid rgba(55,65,81,0.9);
+  padding: 4px 5px;
+}
+
+table.ing thead th,
+.r-ing thead th {
+  background: rgba(15,23,42,0.96);
+}
+
+/* steps */
+.r-steps,
+.r-sauce {
+  margin-top: 6px;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.r-benef {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--accent-strong);
+}
+
+/* =============== RECETTES SAUVEGARDÉES (ACCORDÉON) =============== */
+
+#savedRecipes {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.saved-recipe {
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(250, 204, 21, 0.68);
+  background: radial-gradient(circle at top left, rgba(250,204,21,0.1), transparent 45%),
+    rgba(15,23,42,0.96);
+  overflow: hidden;
+}
+
+.saved-recipe > summary {
+  list-style: none;
+  padding: 9px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.saved-recipe > summary::-webkit-details-marker {
+  display: none;
+}
+
+.saved-recipe > summary span:first-child {
+  font-weight: 500;
+}
+
+.saved-recipe .muted {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* petit triangle custom */
+.saved-recipe[open] > summary::before,
+.saved-recipe > summary::before {
+  content: "▸";
+  margin-right: 8px;
+  font-size: 11px;
+  color: var(--accent-strong);
+}
+
+.saved-recipe[open] > summary::before {
+  content: "▾";
+}
+
+.saved-recipe-body {
+  border-top: 1px solid rgba(250,204,21,0.3);
+  padding: 8px 10px 10px;
+}
+
+/* =============== HISTORIQUE =============== */
+
+.history-item {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(15,23,42,0.9);
+  border: 1px solid rgba(55,65,81,0.9);
+  font-size: 12px;
+}
+
+.history-item .muted {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* =============== STATUS BAR =============== */
+
+#status {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* =============== SHOPPING LIST CARD =============== */
+
+.shopping-card {
+  margin-top: 10px;
+}
+
+/* =============== RESPONSIVE =============== */
+
+@media (min-width: 768px) {
+  .app-shell {
+    padding: 20px 20px 20px;
+  }
+
+  .app-header {
+    margin-top: 6px;
+  }
+
+  main {
+    gap: 18px;
+  }
+
+  .tabpanel {
+    padding: 18px;
+  }
+
+  .profile-row .actions {
+    flex-direction: row;
+  }
+
+  /* tabs en haut sur tablette/desktop */
+  .tabs-wrapper {
+    position: static;
+    padding: 0;
+    background: transparent;
+  }
+
+  .tabs {
+    margin-top: 4px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout-two-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 16px;
+    align-items: flex-start;
+  }
+}
