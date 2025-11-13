@@ -113,33 +113,22 @@ function renderSavedRecipes(){
   `).join("");
 }
 
-qs("#savedRecipes")?.addEventListener("click", e=>{
-  const id = e.target.getAttribute("data-loadrecipe");
-  if(!id) return;
+qs("#savedRecipes")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-loadrecipe]");
+  if (!btn) return;
 
-  const item = state.historyRecipes.find(x=>x.id===id);
-  if(!item) return;
+  const id = btn.getAttribute("data-loadrecipe");
+  const item = state.historyRecipes.find(x => x.id === id);
+  if (!item) return;
 
-  // clone la recette
-  const cloned = structuredClone(item.recipe);
-
-  // recalcul macros/kcal selon profils actuels
-  // mais portions = recalculées via computeTargetsFromPlan()
-  const currentTargets = computeTargetsFromPlan();
-
-  // find matching recipe "index"
-  const idx = currentTargets.findIndex(rt =>
-    recipeSignature({title:item.title, ingredients:item.recipe.ingredients}) === recipeSignature(item.recipe)
-  );
-
-  if(idx >= 0){
-    cloned.portions = currentTargets[idx].portions;
-    cloned.macros_targets = currentTargets[idx].targets;
-  }
+  // clone safe (fallback si structuredClone n’existe pas)
+  const cloned = (typeof structuredClone === "function")
+    ? structuredClone(item.recipe)
+    : JSON.parse(JSON.stringify(item.recipe));
 
   resultsEl.innerHTML = "";
-  renderPlan({recipes:[cloned]});
-  window.scrollTo({top:0,behavior:"smooth"});
+  renderPlan({ recipes: [cloned] });
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 /* ---------- DOM refs ---------- */
