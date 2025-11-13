@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>HEBO — Batch cooking sportif</title>
+  <meta name="theme-color" content="#050509" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- HEADER TYPE APP -->
+    <header class="app-header">
+      <div class="app-logo">H</div>
+      <div class="app-header-main">
+        <div class="app-title">HEBO</div>
+        <div class="app-subtitle">Batch cooking sportif • v6.1 “VENÈRE ++”</div>
+      </div>
+      <div class="app-header-actions">
+        <!-- petit bouton “soft” dans le header, optionnel -->
+        <!-- Tu as déjà un vrai bouton install dans Paramètres -->
+        <span style="font-size:11px;color:var(--text-muted);">100% local</span>
+      </div>
+    </header>
+
+    <!-- CONTENU PRINCIPAL -->
+    <main>
+
+      <!-- TAB: PLANNING -->
+      <section class="tabpanel active" id="tab-planning" role="tabpanel" aria-labelledby="Planning">
+        <div class="card">
+          <div class="card-title">
+            🗓️ Planning hebdo
+            <span class="muted">Coche qui mange midi / dîner, par jour et par profil.</span>
+          </div>
+          <div class="card-body">
+            <div class="planning-wrapper">
+              <table id="planningTable"></table>
+            </div>
+          </div>
+        </div>
+
+        <div class="layout-two-cols" style="margin-top:10px;">
+          <!-- Colonne gauche : génération / actions -->
+          <div class="card">
+            <div class="card-title">🚀 Génération</div>
+            <div class="card-body">
+              <div class="row" style="margin-bottom:8px;">
+                <button id="generateBtn" class="btn primary">Générer mes recettes</button>
+                <button id="exportBtn" class="btn ghost">Exporter JSON</button>
+                <button id="exportPdfBtn" class="btn ghost">Exporter PDF</button>
+              </div>
+              <div id="status"></div>
+            </div>
+          </div>
+
+          <!-- Colonne droite : résultats -->
+          <div class="card">
+            <div class="card-title">
+              🍽️ Recettes & macros
+              <span class="muted">Recettes générées + liste de courses.</span>
+            </div>
+            <div class="card-body" id="results">
+              <!-- rempli par app.js (renderPlan + renderShoppingList) -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: PROFILS -->
+      <section class="tabpanel" id="tab-profils" role="tabpanel" aria-labelledby="Profils" hidden>
+        <div class="card">
+          <div class="card-title">👤 Profils & portions</div>
+          <div class="card-body">
+            <form id="profileForm" class="row">
+              <label class="field">
+                <span>Nom</span>
+                <input id="pName" type="text" placeholder="Thomas" />
+              </label>
+              <label class="field">
+                <span>G / portion (g)</span>
+                <input id="pG" type="number" value="100" />
+              </label>
+              <label class="field">
+                <span>P / portion (g)</span>
+                <input id="pP" type="number" value="200" />
+              </label>
+              <label class="field">
+                <span>Lég / portion (g)</span>
+                <input id="pV" type="number" value="150" />
+              </label>
+              <button class="btn primary" id="addProfileBtn">Ajouter / Mettre à jour</button>
+            </form>
+
+            <div style="margin-top:10px;">
+              <div class="card-title" style="padding-left:0;">Profils actifs</div>
+              <div id="profilesList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: MATERIEL / ENVIES / PLACARD -->
+      <section class="tabpanel" id="tab-materiel" role="tabpanel" aria-labelledby="Matériel" hidden>
+        <div class="card">
+          <div class="card-title">🧰 Matériel, envies & placard</div>
+          <div class="card-body">
+            <label class="field">
+              <span>Matériel autorisé</span>
+              <input id="matos" type="text" placeholder="poêle, casserole, four, blender, wok" />
+            </label>
+            <label class="field" style="margin-top:8px;">
+              <span>Envies</span>
+              <input id="envies" type="text" placeholder="ex: plus de tex-mex, rapide, peu de vaisselle..." />
+            </label>
+            <label class="field" style="margin-top:8px;">
+              <span>Autre (interdits; allergies; éviter; cuisines)</span>
+              <textarea id="autres" rows="3" placeholder="interdits: ...; allergies: ...; éviter: ...; cuisines: ..."></textarea>
+            </label>
+            <label class="field" style="margin-top:8px;">
+              <span>Placard (prioritaire)</span>
+              <textarea id="placard" rows="3" placeholder="liste libre"></textarea>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: PARAMS -->
+      <section class="tabpanel" id="tab-params" role="tabpanel" aria-labelledby="Paramètres" hidden>
+        <div class="card">
+          <div class="card-title">⚙️ Paramètres OpenAI</div>
+          <div class="card-body">
+            <label class="field">
+              <span>Clé API OpenAI <small>(stockée localement)</small></span>
+              <input id="apiKey" type="password" placeholder="sk-..." />
+            </label>
+
+            <div class="row" style="margin-top:10px;">
+              <label class="field">
+                <span>Modèle</span>
+                <select id="model">
+                  <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+                  <option value="gpt-4o-mini">gpt-4o-mini</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Tokens max</span>
+                <input id="maxTokens" type="number" min="1000" max="32000" step="500" value="12000" />
+              </label>
+            </div>
+
+            <div style="margin-top:8px;font-size:12px;color:var(--text-muted);">
+              💡 Option plus clean : route API Vercel pour cacher la clé (variables d’env).
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:10px;">
+          <div class="card-body row">
+            <button id="installBtn" class="btn ghost">Ajouter à l'écran d'accueil</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: HISTORIQUE -->
+      <section class="tabpanel" id="tab-history" role="tabpanel" aria-labelledby="Historique" hidden>
+        <div class="card">
+          <div class="card-title">🕘 Historique des générations</div>
+          <div class="card-body">
+            <div id="historyList"></div>
+            <div class="row" style="margin-top:8px;">
+              <button id="clearHistoryBtn" class="btn danger">Vider l'historique</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: RECETTES SAUVEGARDÉES -->
+      <section class="tabpanel" id="tab-saved" role="tabpanel" aria-labelledby="Recettes" hidden>
+        <div class="card">
+          <div class="card-title">📚 Recettes sauvegardées</div>
+          <div class="card-body">
+            <div id="savedRecipes"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- NAVIGATION TYPE APP BAR (en bas sur mobile, en haut sur desktop) -->
+    <div class="tabs-wrapper">
+      <nav class="tabs" role="tablist" aria-label="Navigation principale">
+        <button class="tab active" data-tab="planning" role="tab" aria-selected="true">
+          🗓️ <span>Planning</span>
+        </button>
+        <button class="tab" data-tab="profils" role="tab" aria-selected="false">
+          👤 <span>Profils</span>
+        </button>
+        <button class="tab" data-tab="materiel" role="tab" aria-selected="false">
+          🧰 <span>Matériel</span>
+        </button>
+        <button class="tab" data-tab="params" role="tab" aria-selected="false">
+          ⚙️ <span>Paramètres</span>
+        </button>
+        <button class="tab" data-tab="history" role="tab" aria-selected="false">
+          🕘 <span>Historique</span>
+        </button>
+        <button class="tab" data-tab="saved" role="tab" aria-selected="false">
+          📚 <span>Recettes</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- TEMPLATE RECETTE (compatible avec ton JS & ton nouveau CSS) -->
+    <template id="recipeTpl">
+      <article class="recipe">
+        <div class="recipe-header">
+          <div class="recipe-title"></div>
+          <span class="pill"></span>
+        </div>
+        <div class="recipe-meta">
+          <span><b>Cuisine</b> <span class="r-cuisine"></span></span>
+          <span><b>Durée</b> <span class="r-duree"></span> min</span>
+          <span><b>Matériel</b> <span class="r-matos"></span></span>
+          <span><b>Portions</b> <span class="r-portions"></span></span>
+          <span><b>Cibles (g cru)</b> <span class="r-cibles"></span></span>
+          <span><b>kcal/personne</b> <span class="r-kcal"></span></span>
+        </div>
+
+        <div class="row" style="margin-top:8px;">
+          <div style="flex:1;min-width:0;">
+            <div class="card-title" style="margin-bottom:4px;">🧂 Ingrédients</div>
+            <table class="ing">
+              <thead>
+                <tr><th>Ingrédient</th><th>Qté</th><th>Unité</th></tr>
+              </thead>
+              <tbody class="r-ing"></tbody>
+            </table>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div class="card-title" style="margin-bottom:4px;">👨‍🍳 Étapes — plat</div>
+            <ol class="r-steps"></ol>
+            <div class="card-title" style="margin-top:6px;margin-bottom:4px;">🥣 Étapes — sauce</div>
+            <ol class="r-sauce"></ol>
+          </div>
+        </div>
+
+        <div class="r-benef"></div>
+      </article>
+    </template>
+
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
