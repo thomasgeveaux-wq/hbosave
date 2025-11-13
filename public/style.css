@@ -121,11 +121,18 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:v
 }
 
 .saved-recipe {
-  border-radius: 8px;
-  border: 1px solid #eee;
-  padding: 4px 8px;
-  margin-bottom: 6px;
-  background: #fafafa;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  margin-bottom: 8px;
+  background: var(--surface);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.saved-recipe[open] {
+  background: #19191c;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(231, 197, 112, 0.2);
 }
 
 .saved-recipe > summary {
@@ -135,13 +142,36 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:v
   align-items: baseline;
   gap: 8px;
   list-style: none;
+  padding: 6px 0;
 }
 
 .saved-recipe > summary::-webkit-details-marker {
   display: none;
 }
 
-.saved-recipe-body {
-  margin-top: 6px;
+/* Petite flèche custom */
+.saved-recipe > summary::before {
+  content: "▸";
+  font-size: 0.85rem;
+  margin-right: 6px;
+  transition: transform 0.2s;
+  color: var(--muted);
 }
 
+.saved-recipe[open] > summary::before {
+  transform: rotate(90deg);
+  color: var(--gold);
+}
+
+.saved-recipe-body {
+  margin-top: 8px;
+}
+
+/* Recette rendue dans l'accordéon */
+.saved-recipe-body .card {
+  border-radius: 12px;
+  border-color: var(--line);
+}
+.saved-recipe-body .recipe {
+  margin-top: 4px;
+}
