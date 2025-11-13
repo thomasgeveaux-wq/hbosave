@@ -600,6 +600,7 @@ const NUTRI_DB = [
   {k:'quinoa', kcal:368, c:64, p:14, f:6, type:'carb'},
   {k:'pâtes', kcal:350, c:70, p:12, f:2, type:'carb'},
   {k:'boulgour', kcal:342, c:76, p:12, f:1, type:'carb'},
+  {k:'nouille', kcal:350, c:70, p:12, f:2, type:'carb'},
   {k:'semoule', kcal:360, c:73, p:12, f:1, type:'carb'},
   {k:'pommes de terre', kcal:77, c:17, p:2, f:0.1, type:'carb'},
   {k:'patate douce', kcal:86, c:20, p:1.6, f:0.1, type:'carb'},
