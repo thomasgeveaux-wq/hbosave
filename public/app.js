@@ -92,7 +92,12 @@ function addHistoryEntry(plan){
     recipe: structuredClone(r)
   });
 });
-
+// borne + sauvegarde + refresh liste
+if (state.historyRecipes.length > 200) {
+  state.historyRecipes = state.historyRecipes.slice(-200);
+}
+saveState();
+renderSavedRecipes();
 }
 function deleteHistoryEntry(id){
   state.history = (state.history||[]).filter(h=>h.id!==id);
@@ -126,15 +131,6 @@ qs("#savedRecipes")?.addEventListener("click", (e) => {
   const item = (state.historyRecipes||[]).find(x => x.id === id);
   if (!item) return;
   openRecipeFromSaved(item);
-
-  // clone safe (fallback si structuredClone n’existe pas)
-  const cloned = (typeof structuredClone === "function")
-    ? structuredClone(item.recipe)
-    : JSON.parse(JSON.stringify(item.recipe));
-
-  resultsEl.innerHTML = "";
-  renderPlan({ recipes: [cloned] });
-  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 /* ---------- DOM refs ---------- */
