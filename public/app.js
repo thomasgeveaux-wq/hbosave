@@ -87,12 +87,7 @@ function addHistoryEntry(plan){
     recipe: structuredClone(r)
   });
 });
-// borne et sauvegarde
-if (state.historyRecipes.length > 200) {
-  state.historyRecipes = state.historyRecipes.slice(-200);
-}
-saveState();
-renderSavedRecipes();
+
 }
 function deleteHistoryEntry(id){
   state.history = (state.history||[]).filter(h=>h.id!==id);
@@ -133,19 +128,19 @@ qs("#savedRecipes")?.addEventListener("click", e=>{
   const currentTargets = computeTargetsFromPlan();
 
   // find matching recipe "index"
-   qs("#savedRecipes")?.addEventListener("click", e => {
-  const id = e.target.getAttribute("data-loadrecipe");
-  if (!id) return;
+  const idx = currentTargets.findIndex(rt =>
+    recipeSignature({title:item.title, ingredients:item.recipe.ingredients}) === recipeSignature(item.recipe)
+  );
 
-  const item = state.historyRecipes.find(x => x.id === id);
-  if (!item) return;
+  if(idx >= 0){
+    cloned.portions = currentTargets[idx].portions;
+    cloned.macros_targets = currentTargets[idx].targets;
+  }
 
-  const cloned = structuredClone(item.recipe); // on garde les portions sauvées
   resultsEl.innerHTML = "";
-  renderPlan({ recipes: [cloned] });
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  renderPlan({recipes:[cloned]});
+  window.scrollTo({top:0,behavior:"smooth"});
 });
-
 
 /* ---------- DOM refs ---------- */
 const planningTable = qs("#planningTable");
@@ -997,4 +992,3 @@ renderProfiles();
 renderPlanningTable();
 renderHistory();
 renderSavedRecipes();
-
