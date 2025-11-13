@@ -63,8 +63,13 @@ function recipeSignature(r){
 }
 function lastSignatures(limit=20){
   const sigs = new Set();
+  // anciens packs (compat)
   (state.history||[]).slice(-limit).forEach(h=>{
-    (h.recipes||[]).forEach(x=>sigs.add(x.sig));
+    (h.recipes||[]).forEach(x=>x?.sig && sigs.add(x.sig));
+  });
+  // recettes à plat (plus riche)
+  (state.historyRecipes||[]).slice(-limit*3).forEach(r=>{
+    if(r?.sig) sigs.add(r.sig);
   });
   return sigs;
 }
@@ -103,23 +108,24 @@ function renderSavedRecipes(){
     return;
   }
 
-  wrap.innerHTML = hist.map(r=>`
+ wrap.innerHTML = hist.map(r=>`
     <div class="history-item">
-      <b>${new Date(r.ts).toLocaleString()}</b>
-      — ${r.title}<br>
-      <button class="btn" data-loadrecipe="${r.id}">Recharger</button>
+      <div><b>${r.title || "(sans titre)"}</b> <span class="muted">${r.recipe?.cuisine_family ? "("+r.recipe.cuisine_family+")" : ""}</span></div>
+      <div class="row" style="gap:6px;margin-top:6px;">
+        <button class="btn" data-loadrecipe="${r.id}">Ouvrir</button>
+      </div>
     </div>
-    <hr>
+    <hr/>
   `).join("");
 }
 
 qs("#savedRecipes")?.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-loadrecipe]");
   if (!btn) return;
-
   const id = btn.getAttribute("data-loadrecipe");
-  const item = state.historyRecipes.find(x => x.id === id);
+  const item = (state.historyRecipes||[]).find(x => x.id === id);
   if (!item) return;
+  openRecipeFromSaved(item);
 
   // clone safe (fallback si structuredClone n’existe pas)
   const cloned = (typeof structuredClone === "function")
@@ -778,6 +784,108 @@ function computePerPersonNutrition(recipe, profiles){
   });
 
   return out;
+}
+function renderSingleRecipe(r, mountEl){
+  // clone ton template existant
+  const tpl = qs("#recipeTpl");
+  const node = tpl.content.cloneNode(true);
+
+  node.querySelector(".recipe-title").textContent = `Recette — ${r.title||""}`;
+  node.querySelector(".pill").textContent = (r.duration_min?`${r.duration_min} min`:"");
+  node.querySelector(".r-cuisine").textContent = r.cuisine_family || "";
+  node.querySelector(".r-duree").textContent   = r.duration_min || "";
+  node.querySelector(".r-matos").textContent   = (r.equipment||[]).join(", ");
+
+  // Portions courantes
+  node.querySelector(".r-portions").textContent =
+    Object.entries(r.portions||{}).map(([n,v])=>`${n}: ${v}`).join(" • ");
+
+  // Cibles affichées (si présentes)
+  const mt = r.macros_targets||{};
+  node.querySelector(".r-cibles").textContent =
+    `G: ${mt.glucides_g_cru||0} • V: ${mt.viandes_poissons_g_cru||0} • L: ${mt.legumes_g_cru||0}`;
+
+  // kcal/personne recalculées IRL
+  const per = computePerPersonNutrition(r, state.profiles.filter(p=>p.active));
+  const kcalTxt = Object.entries(per).map(([n,pp])=>{
+    const parts = Math.max(1, Number(r.portions?.[n]||0));
+    const perMeal = {
+      kcal: Math.round(pp.kcal/parts),
+      P: Math.round(pp.P/parts*10)/10,
+      G: Math.round(pp.G/parts*10)/10,
+      L: Math.round(pp.L/parts*10)/10
+    };
+    return `${n}: ${pp.kcal} kcal (≈ ${perMeal.kcal}/repas) | P ${pp.P}g (≈ ${perMeal.P}) | G ${pp.G}g (≈ ${perMeal.G}) | L ${pp.L}g (≈ ${perMeal.L})`;
+  }).join(" • ");
+  node.querySelector(".r-kcal").textContent = kcalTxt;
+
+  // Ingrédients
+  const tbody = node.querySelector(".r-ing");
+  tbody.innerHTML = "";
+  (r.ingredients||[]).forEach(it=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${it.name||""}</td><td>${it.qty||0}</td><td>${it.unit||""}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Étapes
+  const ol1 = node.querySelector(".r-steps");
+  ol1.innerHTML = "";
+  (r.steps||[]).forEach(s=>{ const li = document.createElement("li"); li.textContent = s; ol1.appendChild(li); });
+  const ol2 = node.querySelector(".r-sauce");
+  ol2.innerHTML = "";
+  (r.sauce_steps||[]).forEach(s=>{ const li = document.createElement("li"); li.textContent = s; ol2.appendChild(li); });
+  node.querySelector(".r-benef").textContent = r.benefits_sport||"";
+
+  mountEl.innerHTML = "";
+  mountEl.appendChild(node);
+}
+
+function openRecipeFromSaved(item){
+  // 1) runtime
+  const r = (typeof structuredClone==="function") ? structuredClone(item.recipe) : JSON.parse(JSON.stringify(item.recipe));
+  r.portions = r.portions || {};
+
+  // 2) mini-UI portions
+  resultsEl.innerHTML = "";
+  const wrap = document.createElement("section");
+  wrap.className = "card";
+  wrap.innerHTML = `
+    <div class="card-title">🍽️ ${r.title} <span class="muted">(${r.cuisine_family||""})</span></div>
+    <div class="card-body">
+      <div class="row" style="gap:8px;margin-bottom:12px;">
+        ${state.profiles.filter(p=>p.active).map(p=>{
+          const val = Number(r.portions?.[p.name]||0);
+          return `
+            <label class="field" style="min-width:160px;">
+              <span>${p.name} — portions (repas)</span>
+              <input type="number" class="portion-input" data-name="${p.name}" value="${val}" min="0" step="1" />
+            </label>
+          `;
+        }).join("")}
+        <button id="recalcBtn" class="btn primary">Recalculer</button>
+      </div>
+      <div id="oneRecipeHost"></div>
+    </div>
+  `;
+  resultsEl.appendChild(wrap);
+
+  // 3) rendu initial
+  const host = wrap.querySelector("#oneRecipeHost");
+  renderSingleRecipe(r, host);
+
+  // 4) recalc portions → recalc kcal/macros affichées
+  wrap.querySelector("#recalcBtn")?.addEventListener("click", ()=>{
+    const inputs = wrap.querySelectorAll(".portion-input");
+    inputs.forEach(inp=>{
+      const n = inp.getAttribute("data-name");
+      const v = Number(inp.value||0);
+      r.portions[n] = v;
+    });
+    renderSingleRecipe(r, host);
+  });
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 /* ---------- Rendering recettes ---------- */
