@@ -621,6 +621,7 @@ const NUTRI_DB = [
 
   // Veg (moyennes)
   {k:'brocoli', kcal:34, c:7, p:2.8, f:0.4, type:'veg'},
+   {k:'haricots verts', kcal:34, c:7, p:2.8, f:0.4, type:'veg'},
   {k:'courgette', kcal:17, c:3.1, p:1.2, f:0.3, type:'veg'},
   {k:'poivron', kcal:31, c:6, p:1, f:0.3, type:'veg'},
   {k:'tomate', kcal:18, c:3.9, p:0.9, f:0.2, type:'veg'},
