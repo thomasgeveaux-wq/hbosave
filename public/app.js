@@ -123,18 +123,7 @@ function renderSavedRecipes(){
     </details>
   `).join("");
 }
-  wrap.innerHTML = hist.map(r=>`
-    <details class="saved-recipe">
-      <summary>
-        <span>${r.title || "(sans titre)"}</span>
-        ${r.recipe?.cuisine_family ? `<span class="muted">(${r.recipe.cuisine_family})</span>` : ""}
-      </summary>
-      <div class="saved-recipe-body">
-        <button class="btn" data-loadrecipe="${r.id}">Ouvrir</button>
-      </div>
-    </details>
-  `).join("");
-}
+
 
 
 const savedWrap = qs("#savedRecipes");
@@ -159,6 +148,7 @@ savedWrap?.addEventListener("toggle", (e) => {
   renderSavedRecipeInline(item, body);
   body.dataset.rendered = "1";
 });
+
 
 
 /* ---------- DOM refs ---------- */
