@@ -104,16 +104,19 @@ function deleteHistoryEntry(id){
   saveState();
   renderHistory();
 }
-function renderSavedRecipes(){
+function renderSavedRecipes() {
   const wrap = qs("#savedRecipes");
-  const hist = [...(state.historyRecipes||[])].reverse();
+  const hist = [...(state.historyRecipes || [])].reverse();
 
-  if (!hist.length){
+  if (!wrap) return;
+
+  if (!hist.length) {
     wrap.innerHTML = "<i>Aucune recette sauvegardée encore.</i>";
     return;
   }
 
-  wrap.innerHTML = hist.map(r=>`
+  // 1) On construit les accordéons
+  wrap.innerHTML = hist.map(r => `
     <details class="saved-recipe" data-id="${r.id}">
       <summary>
         <span>${r.title || "(sans titre)"}</span>
@@ -122,32 +125,30 @@ function renderSavedRecipes(){
       <div class="saved-recipe-body"></div>
     </details>
   `).join("");
+
+  // 2) On accroche le listener "toggle" sur CHAQUE <details>
+  wrap.querySelectorAll(".saved-recipe").forEach(details => {
+    details.addEventListener("toggle", () => {
+      if (!details.open) return; // ne rend que quand ça s’ouvre
+
+      const id = details.dataset.id;
+      if (!id) return;
+
+      const item = (state.historyRecipes || []).find(x => x.id === id);
+      if (!item) return;
+
+      const body = details.querySelector(".saved-recipe-body");
+      if (!body) return;
+
+      // évite de re-render 15 fois
+      if (body.dataset.rendered === "1") return;
+
+      renderSavedRecipeInline(item, body);
+      body.dataset.rendered = "1";
+    });
+  });
 }
 
-
-
-const savedWrap = qs("#savedRecipes");
-
-savedWrap?.addEventListener("toggle", (e) => {
-  const details = e.target;
-  if (!(details instanceof HTMLDetailsElement)) return;
-  if (!details.open) return; // on ne rend que quand ça s'ouvre
-
-  const id = details.dataset.id;
-  if (!id) return;
-
-  const item = (state.historyRecipes || []).find(x => x.id === id);
-  if (!item) return;
-
-  const body = details.querySelector(".saved-recipe-body");
-  if (!body) return;
-
-  // Pour éviter de re-générer 50 fois si on ouvre/ferme
-  if (body.dataset.rendered === "1") return;
-
-  renderSavedRecipeInline(item, body);
-  body.dataset.rendered = "1";
-});
 
 
 
